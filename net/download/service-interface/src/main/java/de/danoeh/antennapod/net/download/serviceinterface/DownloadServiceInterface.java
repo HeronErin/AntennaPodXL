@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public abstract class DownloadServiceInterface {
+    public static Map<String, String> urlAliases = new HashMap<>();
+
     public static final String WORK_TAG = "episodeDownload";
     public static final String WORK_TAG_EPISODE_URL = "episodeUrl:";
     public static final String WORK_DATA_PROGRESS = "progress";
@@ -43,16 +45,27 @@ public abstract class DownloadServiceInterface {
     public abstract void cancelAll(Context context);
 
     public boolean isDownloadingEpisode(String url) {
+        if (urlAliases.containsKey(url))
+            url=urlAliases.get(url);
+
         return currentDownloads.containsKey(url)
                 && currentDownloads.get(url).getState() != DownloadStatus.STATE_COMPLETED;
     }
 
     public boolean isEpisodeQueued(String url) {
+        if (urlAliases.containsKey(url))
+            url=urlAliases.get(url);
+
+
         return currentDownloads.containsKey(url)
                 && currentDownloads.get(url).getState() == DownloadStatus.STATE_QUEUED;
     }
 
     public int getProgress(String url) {
+        String alias = urlAliases.get(url);
+        if (alias != null)
+            url = alias;
+
         return isDownloadingEpisode(url) ? currentDownloads.get(url).getProgress() : -1;
     }
 }

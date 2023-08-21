@@ -4,6 +4,7 @@ import android.text.TextUtils;
 import de.danoeh.antennapod.core.service.download.AntennapodHttpClient;
 import de.danoeh.antennapod.core.storage.DBWriter;
 import de.danoeh.antennapod.core.util.NetworkUtils;
+import de.danoeh.antennapod.core.util.resolvers.MasterResolver;
 import de.danoeh.antennapod.model.feed.FeedMedia;
 import io.reactivex.Single;
 import io.reactivex.SingleOnSubscribe;
@@ -41,9 +42,12 @@ public abstract class MediaSizeLoader {
                     return;
                 }
 
+
+
+
                 OkHttpClient client = AntennapodHttpClient.getHttpClient();
                 Request.Builder httpReq = new Request.Builder()
-                        .url(url)
+                        .url(MasterResolver.resolve(url))
                         .header("Accept-Encoding", "identity")
                         .head();
                 try {

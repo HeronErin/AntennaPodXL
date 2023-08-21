@@ -17,10 +17,12 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import de.danoeh.antennapod.core.ClientConfigurator;
 import de.danoeh.antennapod.core.R;
+import de.danoeh.antennapod.core.TemporaryFeedDatabase;
 import de.danoeh.antennapod.core.service.download.handler.MediaDownloadedHandler;
 import de.danoeh.antennapod.core.storage.DBReader;
 import de.danoeh.antennapod.core.storage.DBWriter;
 import de.danoeh.antennapod.core.util.gui.NotificationUtils;
+import de.danoeh.antennapod.core.util.resolvers.MasterResolver;
 import de.danoeh.antennapod.event.MessageEvent;
 import de.danoeh.antennapod.model.download.DownloadError;
 import de.danoeh.antennapod.model.download.DownloadResult;
@@ -53,12 +55,18 @@ public class EpisodeDownloadWorker extends Worker {
     public Result doWork() {
         ClientConfigurator.initialize(getApplicationContext());
         long mediaId = getInputData().getLong(DownloadServiceInterface.WORK_DATA_MEDIA_ID, 0);
+        System.out.println("DOWN: "+ mediaId);
         FeedMedia media = DBReader.getFeedMedia(mediaId);
         if (media == null) {
-            return Result.failure();
+            media = TemporaryFeedDatabase.getById(mediaId);
+
+            if (media == null)
+                return Result.failure();
         }
+        media=fmFix(media);
 
         DownloadRequest request = DownloadRequestCreator.create(media).build();
+        FeedMedia finalMedia = media;
         Thread progressUpdaterThread = new Thread() {
             @Override
             public void run() {
@@ -68,7 +76,7 @@ public class EpisodeDownloadWorker extends Worker {
                             if (isInterrupted()) {
                                 return;
                             }
-                            notificationProgress.put(media.getEpisodeTitle(), request.getProgressPercent());
+                            notificationProgress.put(finalMedia.getEpisodeTitle(), request.getProgressPercent());
                         }
                         setProgressAsync(
                                 new Data.Builder()
@@ -125,8 +133,25 @@ public class EpisodeDownloadWorker extends Worker {
         return Futures.immediateFuture(
                 new ForegroundInfo(R.id.notification_downloading, generateProgressNotification()));
     }
+    FeedMedia fmFix(FeedMedia mediaOld){
+        FeedMedia _fmTemp;
+        String resolved = null;
+        try {
+            resolved = MasterResolver.resolve(mediaOld.getDownload_url());
+        } catch (IOException e) {}
+        if (!resolved.equals(mediaOld.getDownload_url())){
+            _fmTemp = mediaOld;
+            _fmTemp.setDownload_url(resolved);
+        }else{
+            _fmTemp = mediaOld;
+        }
+        return _fmTemp;
 
-    private Result performDownload(FeedMedia media, DownloadRequest request) {
+    }
+    private Result performDownload(FeedMedia mediaOld, DownloadRequest request) {
+
+        final FeedMedia media = fmFix(mediaOld);
+
         File dest = new File(request.getDestination());
         if (!dest.exists()) {
             try {

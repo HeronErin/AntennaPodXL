@@ -107,4 +107,27 @@ public class PodcastSearchResult {
         String author = json.optString("author", null);
         return new PodcastSearchResult(title, imageUrl, feedUrl, author);
     }
+
+    private static String fixUrl(String url){
+        if (url.startsWith("//")){
+            return "https:"+url;
+        }
+        return url;
+    }
+    public static PodcastSearchResult fromYoutubePlaylist(JSONObject json) {
+        String title = json.optString("title", "");
+        String imageUrl = fixUrl(json.optString("playlistThumbnail", null));
+        String feedUrl = "YT-PLAYLIST://"+json.optString("playlistId", null);
+        String author = json.optString("author", null);
+        return new PodcastSearchResult(title, imageUrl, feedUrl, author);
+    }
+
+    public static PodcastSearchResult fromYoutubeChannel(JSONObject result) throws JSONException {
+
+        String title = result.optString("author", "");
+        String imageUrl = fixUrl(result.getJSONArray("authorThumbnails").getJSONObject(0).optString("url", null));
+        String feedUrl = "YT-CHAN://"+result.optString("authorUrl", null);
+        String author = result.optString("author", null);
+        return new PodcastSearchResult(title, imageUrl, feedUrl, author);
+    }
 }

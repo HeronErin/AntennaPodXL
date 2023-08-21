@@ -8,11 +8,16 @@ import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.OutOfQuotaPolicy;
 import androidx.work.WorkManager;
+
+import de.danoeh.antennapod.core.TemporaryFeedDatabase;
 import de.danoeh.antennapod.core.storage.DBWriter;
+import de.danoeh.antennapod.core.util.resolvers.MasterResolver;
 import de.danoeh.antennapod.model.feed.FeedItem;
 import de.danoeh.antennapod.net.download.serviceinterface.DownloadServiceInterface;
 import de.danoeh.antennapod.storage.preferences.UserPreferences;
 
+import java.io.IOException;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 public class DownloadServiceInterfaceImpl extends DownloadServiceInterface {
@@ -24,22 +29,70 @@ public class DownloadServiceInterfaceImpl extends DownloadServiceInterface {
         } else {
             workRequest.setConstraints(getConstraints());
         }
-        WorkManager.getInstance(context).enqueueUniqueWork(item.getMedia().getDownload_url(),
-                ExistingWorkPolicy.KEEP, workRequest.build());
+
+        if (item.getId() == 0){
+            item.setId((new Random()).nextInt(Integer.MAX_VALUE));
+            System.out.println("ASSGN: " + item.getId());
+            item.getMedia().setId(item.getId());
+            TemporaryFeedDatabase.tempFeeds.add(item.getMedia());
+        }
+
+        new Thread(()-> {
+            String resolved = item.getMedia().getDownload_url();
+
+            try {
+                resolved = MasterResolver.resolve(resolved);
+            } catch (IOException ignored) {
+            }
+            System.out.println("RESOLVED: " + resolved);
+
+            if (!resolved.equals(item.getMedia().getDownload_url())) {
+                DownloadServiceInterface.urlAliases.put(item.getMedia().getDownload_url(), resolved);
+            }
+
+
+            WorkManager.getInstance(context).enqueueUniqueWork(resolved,
+                    ExistingWorkPolicy.KEEP, workRequest.build());
+        }).start();
     }
 
     public void download(Context context, FeedItem item) {
         OneTimeWorkRequest.Builder workRequest = getRequest(context, item);
         workRequest.setConstraints(getConstraints());
-        WorkManager.getInstance(context).enqueueUniqueWork(item.getMedia().getDownload_url(),
-                ExistingWorkPolicy.KEEP, workRequest.build());
+
+        if (item.getId() == 0){
+            item.setId((new Random()).nextInt(Integer.MAX_VALUE));
+            item.getMedia().setId(item.getId());
+            TemporaryFeedDatabase.tempFeeds.add(item.getMedia());
+        }
+
+
+        new Thread(()->{
+            String resolved = item.getMedia().getDownload_url();
+            try {
+                resolved = MasterResolver.resolve(resolved);
+            } catch (IOException ignored) {}
+
+            if (!resolved.equals(item.getMedia().getDownload_url())){
+                DownloadServiceInterface.urlAliases.put(item.getMedia().getDownload_url(), resolved);
+            }
+
+
+            WorkManager.getInstance(context).enqueueUniqueWork(resolved,
+                    ExistingWorkPolicy.KEEP, workRequest.build());
+        }).start();
     }
 
     private static OneTimeWorkRequest.Builder getRequest(Context context, FeedItem item) {
+        String url =item.getMedia().getDownload_url();
+        if (DownloadServiceInterface.urlAliases.containsKey(url))
+            url=DownloadServiceInterface.urlAliases.get(url);
+
+
         OneTimeWorkRequest.Builder workRequest = new OneTimeWorkRequest.Builder(EpisodeDownloadWorker.class)
                 .setInitialDelay(0L, TimeUnit.MILLISECONDS)
                 .addTag(DownloadServiceInterface.WORK_TAG)
-                .addTag(DownloadServiceInterface.WORK_TAG_EPISODE_URL + item.getMedia().getDownload_url());
+                .addTag(DownloadServiceInterface.WORK_TAG_EPISODE_URL + url);
         Data.Builder builder = new Data.Builder();
         builder.putLong(WORK_DATA_MEDIA_ID, item.getMedia().getId());
         if (!item.isTagged(FeedItem.TAG_QUEUE) && UserPreferences.enqueueDownloadedEpisodes()) {
@@ -62,6 +115,9 @@ public class DownloadServiceInterfaceImpl extends DownloadServiceInterface {
 
     @Override
     public void cancel(Context context, String url) {
+        if (DownloadServiceInterface.urlAliases.containsKey(url))
+            url=DownloadServiceInterface.urlAliases.get(url);
+
         WorkManager.getInstance(context).cancelAllWorkByTag(WORK_TAG_EPISODE_URL + url);
     }
 

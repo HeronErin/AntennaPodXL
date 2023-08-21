@@ -122,7 +122,14 @@
                 app:drawableStartCompat="@drawable/ic_search"
                 app:drawableLeftCompat="@drawable/ic_search"
                 style="@style/AddPodcastTextView" />
-
+            <TextView
+                android:id="@+id/searchYoutube"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="YouTube search"
+                app:drawableStartCompat="@drawable/ic_search"
+                app:drawableLeftCompat="@drawable/ic_search"
+                style="@style/AddPodcastTextView" />
             <TextView
                 android:id="@+id/searchFyydButton"
                 android:layout_width="match_parent"

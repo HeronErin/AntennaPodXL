@@ -89,6 +89,8 @@ public class PodDBAdapter {
     public static final String KEY_LANGUAGE = "language";
     public static final String KEY_AUTHOR = "author";
     public static final String KEY_HAS_CHAPTERS = "has_simple_chapters";
+
+    public static final String KEY_YOUTUBE_ID = "youtube_id";
     public static final String KEY_TYPE = "type";
     public static final String KEY_ITEM_IDENTIFIER = "item_identifier";
     public static final String KEY_FEED_IDENTIFIER = "feed_identifier";
