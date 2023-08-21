@@ -21,8 +21,10 @@ import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.activity.MainActivity;
 import de.danoeh.antennapod.adapter.CoverLoader;
 import de.danoeh.antennapod.adapter.actionbutton.ItemActionButton;
+import de.danoeh.antennapod.core.TemporaryFeedDatabase;
 import de.danoeh.antennapod.core.util.PlaybackStatus;
 import de.danoeh.antennapod.core.util.download.MediaSizeLoader;
+import de.danoeh.antennapod.core.util.resolvers.MasterResolver;
 import de.danoeh.antennapod.event.playback.PlaybackPositionEvent;
 import de.danoeh.antennapod.core.util.DateFormatter;
 import de.danoeh.antennapod.model.feed.FeedItem;
@@ -144,6 +146,8 @@ public class EpisodeItemViewHolder extends RecyclerView.ViewHolder {
         } else {
             itemView.setBackgroundResource(ThemeUtils.getDrawableFromAttr(activity, R.attr.selectableItemBackground));
         }
+
+
 
         if (DownloadServiceInterface.get().isDownloadingEpisode(media.getDownload_url())) {
             float percent = 0.01f * DownloadServiceInterface.get().getProgress(media.getDownload_url());

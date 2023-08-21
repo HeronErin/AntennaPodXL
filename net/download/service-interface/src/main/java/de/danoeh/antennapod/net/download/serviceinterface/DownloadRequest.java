@@ -247,9 +247,14 @@ public class DownloadRequest implements Parcelable {
         private final Bundle arguments = new Bundle();
         private boolean initiatedByUser = true;
 
+        public static String checkUrl(String url){
+            if (DownloadServiceInterface.urlAliases.containsKey(url))
+                return DownloadServiceInterface.urlAliases.get(url);
+            return url;
+        }
         public Builder(@NonNull String destination, @NonNull FeedMedia media) {
             this.destination = destination;
-            this.source = UrlChecker.prepareUrl(media.getDownload_url());
+            this.source = UrlChecker.prepareUrl(checkUrl(media.getDownload_url()));
             this.title = media.getHumanReadableIdentifier();
             this.feedfileId = media.getId();
             this.feedfileType = media.getTypeAsInt();
@@ -257,7 +262,7 @@ public class DownloadRequest implements Parcelable {
 
         public Builder(@NonNull String destination, @NonNull Feed feed) {
             this.destination = destination;
-            this.source = feed.isLocalFeed() ? feed.getDownload_url() : UrlChecker.prepareUrl(feed.getDownload_url());
+            this.source = feed.isLocalFeed() ? checkUrl(feed.getDownload_url()) : UrlChecker.prepareUrl(checkUrl(feed.getDownload_url()));
             this.title = feed.getHumanReadableIdentifier();
             this.feedfileId = feed.getId();
             this.feedfileType = feed.getTypeAsInt();

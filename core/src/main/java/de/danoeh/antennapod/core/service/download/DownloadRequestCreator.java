@@ -2,6 +2,11 @@ package de.danoeh.antennapod.core.service.download;
 
 import android.util.Log;
 import android.webkit.URLUtil;
+
+import androidx.annotation.Nullable;
+
+import de.danoeh.antennapod.core.TemporaryFeedDatabase;
+import de.danoeh.antennapod.model.feed.FeedItem;
 import de.danoeh.antennapod.storage.preferences.UserPreferences;
 import de.danoeh.antennapod.core.util.FileNameGenerator;
 import de.danoeh.antennapod.model.feed.Feed;
@@ -38,19 +43,23 @@ public class DownloadRequestCreator {
         if (partiallyDownloadedFileExists) {
             dest = new File(media.getFile_url());
         } else {
+
             dest = new File(getMediafilePath(media), getMediafilename(media));
+
         }
 
         if (dest.exists() && !partiallyDownloadedFileExists) {
             dest = findUnusedFile(dest);
         }
         Log.d(TAG, "Requesting download of url " + media.getDownload_url());
-
-        String username = (media.getItem().getFeed().getPreferences() != null)
-                ? media.getItem().getFeed().getPreferences().getUsername() : null;
-        String password = (media.getItem().getFeed().getPreferences() != null)
-                ? media.getItem().getFeed().getPreferences().getPassword() : null;
-
+        String username = null;
+        String password = null;
+        if (media.getItem() != null) {
+            username = (media.getItem().getFeed().getPreferences() != null)
+                    ? media.getItem().getFeed().getPreferences().getUsername() : null;
+            password = (media.getItem().getFeed().getPreferences() != null)
+                    ? media.getItem().getFeed().getPreferences().getPassword() : null;
+        }
         return new DownloadRequest.Builder(dest.toString(), media)
                 .withAuthentication(username, password);
     }
@@ -87,9 +96,16 @@ public class DownloadRequestCreator {
         return "feed-" + FileNameGenerator.generateFileName(filename) + feed.getId();
     }
 
+    private static Feed fixFeed(@Nullable FeedItem fi){
+        if (fi == null)
+            return TemporaryFeedDatabase.getOrCreateTemporaryFeed();
+        return fi.getFeed();
+    }
+
     private static String getMediafilePath(FeedMedia media) {
+
         String mediaPath = MEDIA_DOWNLOADPATH
-                + FileNameGenerator.generateFileName(media.getItem().getFeed().getTitle());
+                + FileNameGenerator.generateFileName(fixFeed(media.getItem()).getTitle());
         return UserPreferences.getDataFolder(mediaPath).toString() + "/";
     }
 

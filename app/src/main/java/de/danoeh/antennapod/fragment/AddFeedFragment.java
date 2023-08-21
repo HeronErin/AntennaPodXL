@@ -84,6 +84,8 @@ public class AddFeedFragment extends Fragment {
                 -> activity.loadChildFragment(OnlineSearchFragment.newInstance(GpodnetPodcastSearcher.class)));
         viewBinding.searchPodcastIndexButton.setOnClickListener(v
                 -> activity.loadChildFragment(OnlineSearchFragment.newInstance(PodcastIndexPodcastSearcher.class)));
+        viewBinding.searchYoutube.setOnClickListener(v
+                -> activity.loadChildFragment(YouTubeSearchFragment.newInstance()));
 
         viewBinding.combinedFeedSearchEditText.setOnEditorActionListener((v, actionId, event) -> {
             performSearch();

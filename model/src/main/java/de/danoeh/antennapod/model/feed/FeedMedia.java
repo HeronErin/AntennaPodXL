@@ -8,6 +8,10 @@ import android.os.Parcelable;
 import androidx.annotation.Nullable;
 import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.MediaDescriptionCompat;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import de.danoeh.antennapod.model.MediaMetadataRetrieverCompat;
 import de.danoeh.antennapod.model.playback.MediaType;
 import de.danoeh.antennapod.model.playback.Playable;
@@ -83,6 +87,14 @@ public class FeedMedia extends FeedFile implements Playable {
         this(id, item, duration, position, size, mime_type, file_url, download_url, downloaded,
                 playbackCompletionDate, played_duration, lastPlayedTime);
         this.hasEmbeddedPicture = hasEmbeddedPicture;
+    }
+
+    public static FeedMedia fromYouTubeSearchJson(JSONObject data, FeedItem feedItem) throws JSONException {
+        FeedMedia feedMedia = new FeedMedia(feedItem, feedItem.getLink(), 0, "audio/webm");
+        feedMedia.setDuration(data.getInt("lengthSeconds")* 1000);
+        feedMedia.setDownload_url(feedItem.getLink());
+
+        return feedMedia;
     }
 
     @Override

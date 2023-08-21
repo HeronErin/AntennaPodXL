@@ -1,12 +1,17 @@
 package de.danoeh.antennapod.model.feed;
 
+import android.util.Base64;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -444,5 +449,28 @@ public class FeedItem extends FeedComponent implements Serializable {
     @Override
     public String toString() {
         return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
+    }
+
+
+
+
+
+
+//    private static long bytesToLong(byte[] bytes) {
+//
+//        ByteBuffer buffer = ByteBuffer.allocate(bytes.length);
+//        buffer.put(bytes);
+//        buffer.flip();//need flip
+//        return buffer.getLong();
+//    }
+    public static FeedItem fromYouTubeVideo(JSONObject jsonObject) throws JSONException {
+        FeedItem feedItem = new FeedItem();
+        feedItem.title = jsonObject.getString("title");
+        feedItem.link = "YT-VID://" + jsonObject.getString("videoId");
+        feedItem.imageUrl = jsonObject.getJSONArray("videoThumbnails").getJSONObject(0).getString("url");
+        feedItem.itemIdentifier = jsonObject.getString("videoId");
+
+        return feedItem;
+
     }
 }

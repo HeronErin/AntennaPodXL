@@ -8,7 +8,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
+import java.io.IOException;
+
 import de.danoeh.antennapod.R;
+import de.danoeh.antennapod.core.util.resolvers.MasterResolver;
 import de.danoeh.antennapod.net.download.serviceinterface.DownloadServiceInterface;
 import de.danoeh.antennapod.model.feed.FeedItem;
 import de.danoeh.antennapod.model.feed.FeedMedia;
@@ -41,25 +45,40 @@ public class DownloadActionButton extends ItemActionButton {
     @Override
     public void onClick(Context context) {
         final FeedMedia media = item.getMedia();
-        if (media == null || shouldNotDownload(media)) {
+        if (media == null) {
             return;
         }
 
-        UsageStatistics.logAction(UsageStatistics.ACTION_DOWNLOAD);
+            String resolved = null;
+            try {
+                resolved = MasterResolver.resolve(media.getDownload_url());
+            } catch (IOException e) {}
+            if (!resolved.equals(media.getDownload_url())){
+                media.setDownload_url(resolved);
+            }
 
-        if (NetworkUtils.isEpisodeDownloadAllowed()) {
-            DownloadServiceInterface.get().downloadNow(context, item, false);
-        } else {
-            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context)
-                    .setTitle(R.string.confirm_mobile_download_dialog_title)
-                    .setMessage(R.string.confirm_mobile_download_dialog_message)
-                    .setPositiveButton(R.string.confirm_mobile_download_dialog_download_later,
-                            (d, w) -> DownloadServiceInterface.get().downloadNow(context, item, false))
-                    .setNeutralButton(R.string.confirm_mobile_download_dialog_allow_this_time,
-                            (d, w) -> DownloadServiceInterface.get().downloadNow(context, item, true))
-                    .setNegativeButton(R.string.cancel_label, null);
-            builder.show();
-        }
+            if (shouldNotDownload(media))
+                return;
+
+
+
+            UsageStatistics.logAction(UsageStatistics.ACTION_DOWNLOAD);
+
+
+            if (NetworkUtils.isEpisodeDownloadAllowed()) {
+                DownloadServiceInterface.get().downloadNow(context, item, false);
+            } else {
+                MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context)
+                        .setTitle(R.string.confirm_mobile_download_dialog_title)
+                        .setMessage(R.string.confirm_mobile_download_dialog_message)
+                        .setPositiveButton(R.string.confirm_mobile_download_dialog_download_later,
+                                (d, w) -> DownloadServiceInterface.get().downloadNow(context, item, false))
+                        .setNeutralButton(R.string.confirm_mobile_download_dialog_allow_this_time,
+                                (d, w) -> DownloadServiceInterface.get().downloadNow(context, item, true))
+                        .setNegativeButton(R.string.cancel_label, null);
+                builder.show();
+            }
+
     }
 
     private boolean shouldNotDownload(@NonNull FeedMedia media) {
